@@ -106,7 +106,18 @@ class Metar:
         ceiling_ok = self.ceiling is None or self.ceiling >= min_ceiling
         return vis_ok and ceiling_ok
 
-    def is_flyable(self, min_visibility=1500, min_ceiling=1500, min_base=1000, max_wind_speed=14, max_wind_gust=25):
+    def is_flyable(self, **kwargs): 
+        defaults = {
+            "min_visibility": None, 
+            "min_ceiling": None, 
+            "min_base": None, 
+            "max_wind_speed": None, 
+            "max_wind_gust": None,
+            "bad_weather": None,
+            "min_temperature": None,
+            "max_temperature": None
+        }
+        config = {**defaults, **kwargs}
         '''
         Determines if the METAR conditions are suitable for flying.
         :param min_visibility: Minimum visibility in meters.
@@ -114,27 +125,43 @@ class Metar:
         :param min_base: Minimum cloud base in meters.
         :param max_wind_speed: Maximum wind speed in knots.
         :param max_wind_gust: Maximum wind gust in knots.
+        :param bad_weather: List of weather conditions that are considered unsuitable for flying.
         :return: True if conditions are suitable for flying, False otherwise.
         
         If any of the parameters are None, they are ignored in the check.'''
-        if min_visibility is not None:
-            vis_ok = self.visibility is None or self.visibility >= min_visibility
+        if config["min_visibility"] is not None:
+            vis_ok = self.visibility is None or self.visibility >= config["min_visibility"]
         else:
             vis_ok = True
-        if min_ceiling is not None:
-            ceiling_ok = self.ceiling is None or self.ceiling >= min_ceiling
+        if config["min_ceiling"] is not None:
+            ceiling_ok = self.ceiling is None or self.ceiling >= config["min_ceiling"]
         else:
             ceiling_ok = True
-        if min_base is not None:
-            base_ok = self.base is None or self.base >= min_base
+        if config["min_base"] is not None:
+            base_ok = self.base is None or self.base >= config["min_base"]
         else:
             base_ok = True
-        if max_wind_speed is not None:
-            wind_ok = self.wind_speed is None or self.wind_speed <= max_wind_speed
+        if config["max_wind_speed"] is not None:
+            wind_ok = self.wind_speed is None or self.wind_speed <= config["max_wind_speed"]
         else:
             wind_ok = True
-        if max_wind_gust is not None:
-            gust_ok = self.wind_gust is None or self.wind_gust <= max_wind_gust
+        if config["max_wind_gust"] is not None:
+            gust_ok = self.wind_gust is None or self.wind_gust <= config["max_wind_gust"]
         else:
             gust_ok = True
-        return vis_ok and ceiling_ok and wind_ok and gust_ok and base_ok
+        if config["bad_weather"] is not None:
+            weather_ok = self.weather is None or not any(
+                wx in self.weather for wx in config["bad_weather"]
+            )
+        else:
+            weather_ok = True
+        if config["min_temperature"] is not None:
+            min_temp_ok = self.temperature is None or self.temperature >= config["min_temperature"]
+        else:
+            min_temp_ok = True
+        if config["max_temperature"] is not None:
+            max_temp_ok = self.temperature is None or self.temperature <= config["max_temperature"]
+        else:
+            max_temp_ok = True  
+
+        return vis_ok and ceiling_ok and wind_ok and gust_ok and base_ok and weather_ok and min_temp_ok and max_temp_ok
