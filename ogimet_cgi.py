@@ -1,7 +1,5 @@
 import requests
-import csv
-import aiohttp
-import asyncio
+
 
 def fetch_metar(
     icao=None,
@@ -24,7 +22,7 @@ def fetch_metar(
     if state:
         params["state"] = state
 
-    print(f"Fetching METAR data with params: {params}")
+    # print(f"Fetching METAR data with params: {params}")
     response = requests.get(base_url, params=params)
 
     lines = response.text.strip().split("\n")
@@ -42,7 +40,6 @@ def fetch_metar(
             formatted_line = f"{timestamp} {metar}"
             formatted_lines.append(formatted_line)
     return formatted_lines
-
 
 
 # Example usage

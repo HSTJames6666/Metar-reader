@@ -1,7 +1,4 @@
-import sqlite3
 import pytz
-import json
-import time
 from datetime import datetime, timedelta
 from ogimet_model import Metar
 from ogimet_utils import (
@@ -10,7 +7,6 @@ from ogimet_utils import (
     get_cached_metars,
 )
 import ogimet_cgi
-import asyncio
 
 
 def merge_consecutive_metar_requests(requests):
@@ -33,7 +29,7 @@ def merge_consecutive_metar_requests(requests):
         else:
             # Check if the current request is consecutive with the last one
             if (req["icao"] == current["icao"] and
-                end_dt <= current["end"] + timedelta(days=1)):
+                    end_dt <= current["end"] + timedelta(days=1)):
                 # Extend the current group
                 if end_dt > current["end"]:
                     current["end"] = end_dt
@@ -75,6 +71,7 @@ def merge_consecutive_metar_requests(requests):
 
     return merged
 
+
 def fetch_metars(station, start_date, end_date, local_start_hour, local_end_hour, local_start_hour_summer, local_end_hour_summer):
     list_of_metars = []
     conn = create_db()
@@ -114,7 +111,8 @@ def fetch_metars(station, start_date, end_date, local_start_hour, local_end_hour
     if requests:
         merged_requests = merge_consecutive_metar_requests(requests)
         for req in merged_requests:
-            print(f"Fetching METARs for {req['icao']} from {req['begin']} to {req['end']}")
+            print(
+                f"Fetching METARs for {req['icao']} from {req['begin'][:4]}-{req['begin'][4:6]}-{req['begin'][6:8]} to {req['end'][:4]}-{req['end'][4:6]}-{req['end'][6:8]}")
             metars = ogimet_cgi.fetch_metar(
                 icao=req["icao"],
                 begin=req["begin"],
@@ -127,9 +125,6 @@ def fetch_metars(station, start_date, end_date, local_start_hour, local_end_hour
                 metar = Metar(raw=raw, parse=True)
                 list_of_metars.append(metar)
                 save_metars_from_objects(conn, [metar])
-        
-
-
 
     # Now collect all metars for the requested period from the DB
     for day in range((end - start).days + 1):
